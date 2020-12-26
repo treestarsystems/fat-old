@@ -4,6 +4,7 @@ const path = require('path');
 const childProcess = require('child_process');
 const emoji = require('node-emoji');
 const system = require('../../system_confs/system_vars.json');
+const mongoose = require('mongoose');
 
 //Variables and Constants
 var coreVars = {
@@ -12,7 +13,7 @@ var coreVars = {
  "installedDir": path.join(__dirname, '../..'),
  "dbServer": "mongodb://localhost:27018",
  "dbName": "fat",
-// "":"",
+ "usersCollection":"userData",
 }
 
 //Required directories
@@ -116,8 +117,6 @@ function getRandomInt(min, max) {
 function replaceAt(string, index, replace) {
  return string.substring(0, index) + replace + string.substring(index + 1);
 }
-// I need to fix this so it closes the connection once it is done.
-// https://docs.mongodb.com/drivers/node/fundamentals/connection
 
 module.exports = {
  genRegular,

@@ -4,10 +4,33 @@ const daemon = require('./service.js');
 const emoji = require('node-emoji');
 const childProcess = require('child_process');
 const path = require('path');
+const compression = require('compression');
+const bodyParser = require('body-parser');
+const cors = require('cors');
 const core = require('./core/core.js');
 //const jobs = require('./core/cronJobs.js').jobs;
 const app = express();
-require('./controller/routes.js')(app); //All routes are defined here.
+const mongoose = require('mongoose');
+
+//Middleware: Must be defined before routes
+app.use(express.json({ limit: '50mb' }));
+
+//Connect to DB
+mongoose.connect(
+ `${core.coreVars.dbServer}/${core.coreVars.dbName}?retryWrites=true`,
+ {useNewUrlParser: true,useUnifiedTopology: true},
+ () => console.log('App is connected to DB!')
+);
+
+//All routes are defined here.
+require('./controller/routes.js')(app);
+
+// Body Parser Middleware
+/*
+app.use(compression());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cors());
+*/
 
 //Create required directories and change permissions if they do not exist.
 //These should be mounted to a large storage pool
