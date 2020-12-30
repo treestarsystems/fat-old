@@ -6,31 +6,53 @@ const childProcess = require('child_process');
 const path = require('path');
 const compression = require('compression');
 const bodyParser = require('body-parser');
+const session = require('express-session');
 const cors = require('cors');
 const core = require('./core/core.js');
+const system = require('../system_confs/system_vars.json');
 //const jobs = require('./core/cronJobs.js').jobs;
-const app = express();
 const mongoose = require('mongoose');
+const routes = require('./controller/routes.js');
+const passport = require('passport');
+const app = express();
+
+//Passport Config
+const LocalStrategy = require('passport-local').Strategy;
+const User = require('./model/user');
+passport.use(new LocalStrategy(User.authenticate()));
+
+//Express session
+app.use(
+ session({
+  secret: system.tokenSecret,
+  resave: true,
+  maxAge: 86400000,
+  saveUninitialized: true
+ })
+);
 
 //Middleware: Must be defined before routes
 app.use(express.json({ limit: '50mb' }));
+app.use(compression());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cors());
+app.use(passport.initialize());
+app.use(passport.session());
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 
 //Connect to DB
 mongoose.connect(
  `${core.coreVars.dbServer}/${core.coreVars.dbName}?retryWrites=true`,
- {useNewUrlParser: true,useUnifiedTopology: true},
- () => console.log('App is connected to DB!')
-);
+ {useNewUrlParser: true,useUnifiedTopology: true}
+ )
+ .then(() => console.log('App is connected to DB!'))
+ .catch((err) => console.log(err));
 
-//All routes are defined here.
-require('./controller/routes.js')(app);
-
-// Body Parser Middleware
-/*
-app.use(compression());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cors());
-*/
+//All routes are called here.
+for (var r in routes) {
+ routes[r](app);
+}
 
 //Create required directories and change permissions if they do not exist.
 //These should be mounted to a large storage pool

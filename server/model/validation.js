@@ -1,31 +1,39 @@
-const joi = require('@hapi/joi');
+const joi = require('joi');
 
 const registerValidation = joi.object({
- userName: joi.string()
+ username: joi.string()
+  .alphanum()
   .min(6)
+  .label('Username')
   .required(),
- fullName: joi.string()
+ fullname: joi.string()
   .min(6)
+  .label('Full name')
   .required(),
  email: joi.string()
   .required(6)
+  .label('Email')
   .email(),
  password: joi.string()
   .min(6)
+  .label('Passowrd')
+  .required(),
+ passwordRepeat: joi.string()
+  .min(6)
+  .label('Repeated Passowrd')
+  .required()
+})
+
+const loginValidation = joi.object({
+ username: joi.string()
+  .min(6)
+  .label('Username')
+  .required(),
+ password: joi.string()
+  .min(6)
+  .label('Passowrd')
   .required(),
 });
-
-const loginValidation = (requestObj) => {
- const schema = {
-  userName: joi.string()
-   .min(6)
-   .required(),
-  password: joi.string()
-   .min(6)
-   .required(),
- };
- return joi.validate(requestObj,schema);
-}
 
 module.exports = {
  registerValidation,

@@ -19,3 +19,33 @@ mkdir system_conf/certs
 cp /etc/letsencrypt/live/<valid DNS name>/* system_conf/certs/
 cat system_confs/certs/privkey.pem > system_conf/certs/fat_Cert.pem
 cat system_confs/certs/cert.pem >> system_conf/certs/fat_Cert.pem
+chmod 600 system_confs/certs/*
+
+#Configuration
+You muse create a system_vars.json file 
+```
+nano system_confs/system_vars.json
+```
+
+You must fill it with the following information.
+```
+{
+ "username":"<system username>",
+ "homedir":"<install directory>",
+ "systemId":"<system name>",
+ "tokenSecret":"<randomly generated string>"
+}
+```
+Ex:
+```
+{
+ "username":"root",
+ "homedir":"/opt/fat",
+ "systemId":"fat0",
+ "tokenSecret":"sbBH5-z:K4puHgUh3wT@"
+}
+```
+
+```
+chmod 600 system_confs/system_vars.json
+```

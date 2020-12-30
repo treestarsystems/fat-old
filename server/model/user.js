@@ -1,7 +1,14 @@
 const mongoose = require('mongoose');
+var passportLocalMongoose = require('passport-local-mongoose');
 
 const userSchema = new mongoose.Schema({
- name: {
+ username: {
+  type: String,
+  required: true,
+  min: 6,
+  max: 255
+ },
+ fullname: {
   type: String,
   required: true,
   min: 6,
@@ -13,11 +20,9 @@ const userSchema = new mongoose.Schema({
   min: 6,
   max: 255
  },
- password: {
+ uuid: {
   type: String,
-  required: true,
-  min: 6,
-  max: 1024
+  required: true
  },
  date: {
   type: Date,
@@ -25,4 +30,7 @@ const userSchema = new mongoose.Schema({
  }
 });
 
-module.exports = mongoose.model('User',userSchema);
+//Plugin for passport-local-mongoose
+userSchema.plugin(passportLocalMongoose);
+
+module.exports = mongoose.model('user',userSchema);
