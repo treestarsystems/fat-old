@@ -5,8 +5,8 @@ const emoji = require('node-emoji');
 const childProcess = require('child_process');
 const path = require('path');
 const compression = require('compression');
-const bodyParser = require('body-parser');
 const session = require('express-session');
+const exphbs = require('express-handlebars');
 const cors = require('cors');
 const core = require('./core/core.js');
 const system = require('../system_confs/system_vars.json');
@@ -25,21 +25,40 @@ passport.use(new LocalStrategy(User.authenticate()));
 app.use(
  session({
   secret: system.tokenSecret,
+  cookie: {
+   maxAge: 86400000,
+  },
   resave: true,
-  maxAge: 86400000,
   saveUninitialized: true
  })
 );
 
+// Serve secure cookies, requires HTTPS
+/*
+if (process.env.NODE_ENV === "prod") {
+ session.cookie.secure = true;
+}
+*/
+
 //Middleware: Must be defined before routes
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: '50mb' }));
 app.use(compression());
-app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
 app.use(passport.initialize());
 app.use(passport.session());
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
+
+// View engine setup
+app.set('views', path.join(__dirname, "view/pages"));
+app.engine('handlebars', exphbs({
+        defaultLayout: 'main',
+        extname: '.handlebars',
+        layoutsDir:'server/view/pages/layouts',
+        partialsDir:'server/view/pages/partials'
+}));
+app.set('view engine', 'handlebars');
 
 //Connect to DB
 mongoose.connect(

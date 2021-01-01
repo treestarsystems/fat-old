@@ -4,6 +4,7 @@ var core = require('../../core/core');
 var system = require('../../../system_confs/system_vars.json');
 const validation = require('../../model/validation');
 const passport = require('passport');
+const jwt = require('jsonwebtoken');
 const User = require('../../model/user');
 
 router.post('/register', async (req,res) => {
@@ -43,13 +44,50 @@ router.post('/login', async (req,res) => {
  //Check if Username
  const userExists = await User.findOne({username: obj.username});
  if (!userExists) return res.status(400).send({"status":"failure","message":"Username or Password is incorrect"});
- passport.authenticate('local', {
-   successRedirect: '/'
-  }, (err, user, info) => {
+// passport.authenticate('local', {successRedirect: '/'}, (err, user, info) => {
+/*
+ passport.authenticate('local', (err, user, info) => {
    if (err) return res.send({"status":"failure","message":"Username or Password is incorrect"});
-   res.redirect('/');
+   res.send({"status":"success","message":"Login successful"});
   }
  )(req, res);
+*/
+ passport.authenticate('local', (err, user, info) => {
+  if (err) return res.json({"status":"failure","message":err});
+//  if (!user) return res.json({"status":"failure2","message":"Username or Password is incorrect"});
+  req.login(user, (err) => {
+   if (err) return res.json({"status":"failure2","message":"Username or Password is incorrect"});
+   const token =  jwt.sign({uuid : user.uuid,
+                            username: user.username}, system.tokenSecret,
+                            {expiresIn: '24h'});
+   res.json({"status":"success","message":"Login successful","token":token});
+  });
+/*
+  if(err){
+   res.json({"status":"failure","message":err})
+  } else{
+   if (!user) {
+    res.json({"status":"failure","message":"Username or Password is incorrect"})
+   } else{
+    req.login(user, (err) => {
+    if (err) {
+     res.json({"status":"failure","message":err})
+    } else {
+     const token =  jwt.sign({uuid : user.uuid,
+                              username: user.username}, system.tokenSecret,
+                              {expiresIn: '24h'});
+     res.json({"status":"success","message":"Login successful","token":token});
+    }
+   })
+   }
+  }
+*/
+ })(req, res);
+});
+
+router.get('/logout', (req,res) => {
+ req.logout();
+ res.redirect('/');
 });
 
 module.exports = router;
