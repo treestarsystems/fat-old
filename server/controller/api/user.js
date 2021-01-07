@@ -20,20 +20,26 @@ router.post('/register', async (req,res) => {
  //Password match
  if (obj.password != obj.passwordRepeat) return res.status(400).send({"status":"failure","message":"Passwords do not match."});
 
+  const saltHash = core.genPassword(obj.password);
+  const salt = saltHash.salt;
+  const hash = saltHash.hash;
+
  const userObj = new User({
   username: obj.username,
   fullname: obj.fullname,
   email: obj.email,
-  uuid: core.uuidv4()
+  uuid: core.uuidv4(),
+  hash: hash,
+  salt: salt,
  });
 
- User.register(userObj, obj.password, (err, user) => {
-  if (err) {
-   res.send({"status":"failure","message":err.message})
-  }else{
-   res.send({"status":"success","message":"User has been successfully created"})
-  }
- });
+ userObj.save()
+  .then((user) => {
+   res.send({"status":"success","message":"User has been successfully created"});
+  })
+  .catch((err) => {
+   res.send({"status":"failure","message":err});
+  });
 });
 
 router.post('/login', async (req,res) => {
@@ -44,50 +50,21 @@ router.post('/login', async (req,res) => {
  //Check if Username
  const userExists = await User.findOne({username: obj.username});
  if (!userExists) return res.status(400).send({"status":"failure","message":"Username or Password is incorrect"});
-// passport.authenticate('local', {successRedirect: '/'}, (err, user, info) => {
-/*
- passport.authenticate('local', (err, user, info) => {
-   if (err) return res.send({"status":"failure","message":"Username or Password is incorrect"});
-   res.send({"status":"success","message":"Login successful"});
-  }
- )(req, res);
-*/
+
  passport.authenticate('local', (err, user, info) => {
   if (err) return res.json({"status":"failure","message":err});
-//  if (!user) return res.json({"status":"failure2","message":"Username or Password is incorrect"});
   req.login(user, (err) => {
-   if (err) return res.json({"status":"failure2","message":"Username or Password is incorrect"});
-   const token =  jwt.sign({uuid : user.uuid,
-                            username: user.username}, system.tokenSecret,
-                            {expiresIn: '24h'});
-   res.json({"status":"success","message":"Login successful","token":token});
+   if (err) return res.json({"status":"failure","message":"Username or Password is incorrect"});
+   res.json({"status":"success","message":"Login successful"});
   });
-/*
-  if(err){
-   res.json({"status":"failure","message":err})
-  } else{
-   if (!user) {
-    res.json({"status":"failure","message":"Username or Password is incorrect"})
-   } else{
-    req.login(user, (err) => {
-    if (err) {
-     res.json({"status":"failure","message":err})
-    } else {
-     const token =  jwt.sign({uuid : user.uuid,
-                              username: user.username}, system.tokenSecret,
-                              {expiresIn: '24h'});
-     res.json({"status":"success","message":"Login successful","token":token});
-    }
-   })
-   }
-  }
-*/
  })(req, res);
 });
 
-router.get('/logout', (req,res) => {
- req.logout();
- res.redirect('/');
+router.post('/profile', async (req,res) => {
+ //User sends a task to be done for their account
+  //Ex: {task: passwordReset/setDisplayName/setTimeZone}
+ //Code needs to take in the user's cookie/session to authenicate and allow them to make changes only to their account/db entry
+ res.send(200);
 });
 
 module.exports = router;

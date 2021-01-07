@@ -1,8 +1,8 @@
-const auth = require('./api/auth.js');
+const user = require('./api/user.js');
 const pages = require('./pages.js');
 
-function authEndpoint (app) {
- app.use('/api/user',auth);
+function userEndpoint (app) {
+ app.use('/api/user',user);
 }
 
 function pagesEndpoint (app) {
@@ -10,7 +10,7 @@ function pagesEndpoint (app) {
 }
 
 module.exports = {
- authEndpoint,
+ userEndpoint,
  pagesEndpoint
 }
 

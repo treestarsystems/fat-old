@@ -24,13 +24,18 @@ const userSchema = new mongoose.Schema({
   type: String,
   required: true
  },
+ hash: {
+  type: String,
+  required: true
+ },
+ salt: {
+  type: String,
+  required: true
+ },
  date: {
   type: Date,
   default: Date.now
  }
 });
-
-//Plugin for passport-local-mongoose
-userSchema.plugin(passportLocalMongoose);
 
 module.exports = mongoose.model('user',userSchema);

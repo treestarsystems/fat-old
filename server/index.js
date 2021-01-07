@@ -12,24 +12,42 @@ const core = require('./core/core.js');
 const system = require('../system_confs/system_vars.json');
 //const jobs = require('./core/cronJobs.js').jobs;
 const mongoose = require('mongoose');
+const mongoStore = require("connect-mongo")(session);
 const routes = require('./controller/routes.js');
 const passport = require('passport');
 const app = express();
 
-//Passport Config
-const LocalStrategy = require('passport-local').Strategy;
-const User = require('./model/user');
-passport.use(new LocalStrategy(User.authenticate()));
+//Main connection to DB
+mongoose.connect(
+ `${core.coreVars.dbServer}/${core.coreVars.dbName}?retryWrites=true`,
+ {useNewUrlParser: true,useUnifiedTopology: true}
+ )
+ .then(() => console.log('App\'s Main connection to DB has been established!'))
+ .catch((err) => console.log(err));
 
-//Express session
+//Session Store connection to DB
+const connection = mongoose.createConnection(
+ `${core.coreVars.dbServer}/${core.coreVars.dbName}?retryWrites=true`,
+ {useNewUrlParser: true,useUnifiedTopology: true},
+ () => console.log('App\'s Session Store connection to DB has been established!')
+);
+
+const sessionStore = new mongoStore({
+ mongooseConnection: connection,
+ collection: "sessions",
+});
+
+//Global Middleware: Must be defined before routes
+//Express session middleware
 app.use(
  session({
   secret: system.tokenSecret,
   cookie: {
    maxAge: 86400000,
   },
-  resave: true,
-  saveUninitialized: true
+  resave: false,
+  saveUninitialized: true,
+  store: sessionStore
  })
 );
 
@@ -40,15 +58,17 @@ if (process.env.NODE_ENV === "prod") {
 }
 */
 
-//Middleware: Must be defined before routes
-app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 app.use(cors());
+
+//Passport Config
+require('./core/passport.js')(passport);
 app.use(passport.initialize());
 app.use(passport.session());
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+
+
 
 // View engine setup
 app.set('views', path.join(__dirname, "view/pages"));
@@ -59,14 +79,6 @@ app.engine('handlebars', exphbs({
         partialsDir:'server/view/pages/partials'
 }));
 app.set('view engine', 'handlebars');
-
-//Connect to DB
-mongoose.connect(
- `${core.coreVars.dbServer}/${core.coreVars.dbName}?retryWrites=true`,
- {useNewUrlParser: true,useUnifiedTopology: true}
- )
- .then(() => console.log('App is connected to DB!'))
- .catch((err) => console.log(err));
 
 //All routes are called here.
 for (var r in routes) {

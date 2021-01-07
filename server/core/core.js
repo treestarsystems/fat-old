@@ -5,6 +5,7 @@ const childProcess = require('child_process');
 const emoji = require('node-emoji');
 const system = require('../../system_confs/system_vars.json');
 const mongoose = require('mongoose');
+const crypto = require("crypto");
 
 //Variables and Constants
 var coreVars = {
@@ -120,24 +121,44 @@ function replaceAt(string, index, replace) {
 
 //https://stackoverflow.com/a/2117523
 function uuidv4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+ return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+  return v.toString(16);
+ });
 }
 
 function ensureAuthenticated (req, res, next) {
  if (req.isAuthenticated()) {
-   return next();
+  return next();
  }
- res.redirect('/api/user/login');
+ res.send({"status":"failure","message":"Authentication failure"});
+// res.redirect('/api/user/login');
 }
 
 function forwardAuthenticated (req, res, next) {
  if (!req.isAuthenticated()) {
   return next();
  }
- res.redirect('/');
+ res.send({"status":"success","message":"Session authenticated"});
+// res.redirect('/');
+}
+
+function validPassword(password, hash, salt) {
+ var hashVerify = crypto
+  .pbkdf2Sync(password, salt, 10000, 64, "sha512")
+  .toString("hex");
+ return hash === hashVerify;
+}
+
+function genPassword(password) {
+ var salt = crypto.randomBytes(32).toString("hex");
+ var genHash = crypto
+  .pbkdf2Sync(password, salt, 10000, 64, "sha512")
+  .toString("hex");
+ return {
+  salt: salt,
+  hash: genHash,
+ };
 }
 
 module.exports = {
@@ -156,5 +177,7 @@ module.exports = {
  replaceAt,
  uuidv4,
  ensureAuthenticated,
- forwardAuthenticated
+ forwardAuthenticated,
+ validPassword,
+ genPassword
 }
